@@ -1,13 +1,19 @@
 const sequelize = require("../utils/database");
 const bcrypt = require("bcrypt");
+const Razorpay = require("razorpay");
 const jwt = require("jsonwebtoken");
 
 const User = sequelize.models.user;
 
 
+
+
 const SECRET_KEY = process.env.SECRET_KEY;
-
-
+const R_SECRET = process.env.RAZORPAY_SECRET;
+let razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY, // your `KEY_ID`
+  key_secret: process.env.RAZORPAY_SECRET, // your `KEY_SECRET`
+});
 
 // GENERAL CONFIG
 const SALT_ROUND = 10;
@@ -95,5 +101,63 @@ exports.loginUser = async (req, res, next) => {
   }
 };
 
+exports.goPremium = async (req, res, next) => {
+  let token = req.headers.token;
+
+  if (token) {
+    let decryptedToken = jwt.decode(JSON.parse(token), SECRET_KEY);
+    console.log(decryptedToken);
+    try {
+      let response = await razorpay.orders.create({
+        // prettier-ignore
+
+        amount: 500,
+
+        currency: "INR",
+        receipt: "Receipt #20",
+      });
+      try {
+        let userResponse = await Order.create({
+          orderId: response.id,
+          userId: decryptedToken.userId,
+        });
+
+        res.status(201).json({ status: "success", data: userResponse });
+      } catch (error) {
+        console.log(error, "122");
+      }
+    } catch (error) {
+      console.log(error, "125");
+    }
+  } else {
+    res.status(404).json({ status: "error", message: "User not found." });
+  }
+};
+
+exports.verifyTransaction = async (req, res, next) => {
+  let body = req.body;
+  let token = req.headers.token;
+  if (body) {
+    let decryptedToken = jwt.decode(JSON.parse(token), SECRET_KEY);
+    let id = body.razorpay_order_id + "|" + body.razorpay_payment_id;
+    let expectedSignature = crypto
+      .createHmac("sha256", R_SECRET)
+      .update(id.toString())
+      .digest("hex");
+
+    if (expectedSignature === body.razorpay_signature) {
+      let order = await Order.update(
+        { paymentId: body.razorpay_payment_id },
+        { where: { userId: decryptedToken.userId } }
+      );
+
+      res.json({ status: "success" });
+    } else {
+      res.json({ status: "error" });
+    }
+  } else {
+    console.log("Payment Part");
+  }
+};
 
 
