@@ -5,6 +5,13 @@ const jwt = require("jsonwebtoken");
 const User = sequelize.models.user;
 
 
+const SECRET_KEY = process.env.SECRET_KEY;
+
+
+
+// GENERAL CONFIG
+const SALT_ROUND = 10;
+
 exports.singUpUser = (req, res, next) => {
   let body = req.body;
   let name = body.name;
@@ -87,3 +94,6 @@ exports.loginUser = async (req, res, next) => {
   } else {
   }
 };
+
+
+
