@@ -1,17 +1,38 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const expenseRoute = require("./routes/expenseRoutes");
+const sequelize = require("./utils/database");
 const cors = require("cors");
+const dotenv = require("dotenv");
+
+// DOTENV
+dotenv.config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use("/", expenseRoute);
 
-app.listen(3000, () => {
-  console.log("Listen on 3000 ");
-});
+// Registering Routers
+
+const routes = [
+  require("./routes/user"),
+  require("./routes/expenseRoute"),
+ 
+];
+
+for (const route of routes) {
+  app.use(route);
+}
+
+sequelize // { alter: true }
+  .sync()
+  .then((res) => {
+    app.listen(3000, () => {
+      console.log("Listening From 3000 Port");
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+  });
 
 module.exports = app;
