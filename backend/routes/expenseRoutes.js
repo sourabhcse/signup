@@ -1,19 +1,11 @@
-const path=require('path');
 const express = require("express");
-const expenseController = require("../controllers/expenseController");
+const expenseRoute = require("../controllers/expenseController");
 const router = express.Router();
 
-/*router.get('/',(req,res,next)=>{
-  res.sendFile(path.join(__dirname,'../','views','index.html'));
-})*/
+router.get("/expense", expenseRoute.getExpenses);
 
-router.get("/", expenseController.getExpenses);
-router
-  .get("/:id", expenseController.getSingleExpense)
-  .put("/:id", expenseController.updateExpense);
-
-router.post("/", expenseController.postExpenses);
-
-router.delete("/:id", expenseController.deleteExpense);
-
+router.post("/expense", expenseRoute.postExpenses);
+router.put("/expense/:id", expenseRoute.updateExpense);
+router.delete("/expense/:id", expenseRoute.deleteExpense);
+router.get("/expense/:id", expenseRoute.getSingleExpense);
 module.exports = router;
