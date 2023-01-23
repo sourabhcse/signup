@@ -1,15 +1,31 @@
-const { where } = require("sequelize");
-const expenseModel = require("../models/exprenseModel");
+const sequelize = require("../utils/database");
 
-exports.getExpenses = async (req, res, next) => {
-  try {
-    let data = await expenseModel.findAll();
+const Expense = sequelize.models.expense;
+const Category = sequelize.models.category;
+const Order = sequelize.models.order;
+const jwt = require("jsonwebtoken");
 
-    res.json(data);
-  } catch (err) {
-    console.log(err);
+const SECRET_KEY = process.env.SECRETE_KEY;
+
+async function checkPremiumUser(req) {
+  let token = req.headers.token;
+  let isPremium = 0;
+  if (token) {
+    let decryptedToken = jwt.decode(JSON.parse(token), SECRET_KEY);
+    try {
+      let res = await Order.count({ where: { userId: decryptedToken.userId } });
+      if (res > 0) {
+        isPremium = 1;
+      }
+    } catch (err) {
+      console.log(err);
+    }
   }
-};
+
+  return isPremium;
+}
+
+
 
 exports.getSingleExpense = async (req, res, next) => {
   let id = req.params.id;
