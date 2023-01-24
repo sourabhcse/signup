@@ -25,6 +25,95 @@ async function checkPremiumUser(req) {
   return isPremium;
 }
 
+exports.getExpenses = async (req, res, next) => {
+  let token = req.headers.token;
+  let page = req.query.page;
+  console.log(req.query.limit);
+  let limit = req.query.limit ? Number(req.query.limit) : 10;
+  if (token) {
+    let decryptedToken = jwt.decode(JSON.parse(token), SECRET_KEY);
+    if (page) {
+      let count = await Expense.count({
+        where: { userId: decryptedToken.userId },
+      });
+
+      let data = await Expense.findAll({
+        offset: (page - 1) * limit,
+        limit: limit,
+        where: { userId: decryptedToken.userId },
+        include: {
+          model: Category,
+        },
+      });
+
+      res.status(200).json({
+        status: "success",
+        data: data,
+        totalItems: count,
+        premium: await checkPremiumUser(req),
+      });
+    } else {
+      try {
+        let data = await Expense.findAll({
+          where: { userId: decryptedToken.userId },
+          include: {
+            model: Category,
+          },
+        });
+        res.json({
+          status: "success",
+          data: data,
+          premium: await checkPremiumUser(req),
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  } else {
+    res.status(404).json({ status: "error", message: "User Not Found" });
+  }
+};
+
+exports.getExpensesByMonth = async (req, res, next) => {
+  let token = req.headers.token;
+  let month = req.params.month;
+
+  if (token) {
+    let decryptedToken = jwt.decode(JSON.parse(token), SECRET_KEY);
+    try {
+      let data = await Expense.findAll({
+        where: {
+          userId: decryptedToken.userId,
+          createdAt: sequelize.where(
+            sequelize.fn("month", sequelize.col("createdAt")),
+            month
+          ),
+        },
+        include: {
+          model: Category,
+        },
+      });
+
+      res.json({ data: data, premium: await checkPremiumUser(req) });
+    } catch (err) {
+      console.log(err);
+    }
+  } else {
+    res.status(404).json({ status: "error", message: "User Not Found" });
+  }
+};
+
+exports.getSingleExpense = async (req, res, next) => {
+  let id = req.params.id;
+  try {
+    let data = await Expense.findAll({
+      where: {
+        _id: id,
+      },
+    });
+    res.status(200).json({ data: data, premium: await checkPremiumUser(req) });
+  } catch (err) {}
+};
 
 
 exports.getSingleExpense = async (req, res, next) => {
