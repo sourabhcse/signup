@@ -120,6 +120,41 @@ window.addEventListener("DOMContentLoaded", (event) => {
   storage();
 });
 
+// Some Pagination Methods and Limit Methods
+function pageChange(e) {
+  let value = Number(e.innerText);
+  PAGE = value;
+  storage();
+}
+
+function changeLimit(e) {
+  let value = Number(e.value);
+  PAGE = 1;
+  LIMIT = value;
+  storage();
+}
+
+function nextPage(e) {
+  PAGE++;
+  storage();
+}
+function previousPage(e) {
+  PAGE--;
+  storage();
+}
+// Delete Item By Click
+async function deleteData(ele) {
+  let number = ele.name;
+  let _urlLink = urlLink + number;
+
+  try {
+    let res = await axios({ method: "delete", url: _urlLink });
+
+    location.reload();
+  } catch (err) {
+    console.log(err);
+  }
+}
 axios.defaults.headers.post["Content-Type"] = "application/json";
 axios.defaults.headers.post["Accept"] = "*/*";
 async function postDataOnCloud(urlLink, dataItems) {
